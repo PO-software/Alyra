@@ -162,7 +162,7 @@ library Errors {
     string constant VOTE_NOT_OPENED = "Vote period not opened yet";
 
     string constant VOTE_NOT_CLOSED = "Vote period not closed yet";
-if (proposals[i].voteCount > proposals[winningProposalId].voteCount)
+
     string constant VOTE_ENDED = "Vote has already reached final step";
 
     string constant USER_NOT_REGISTERED = "User not registered";
