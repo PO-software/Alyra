@@ -143,7 +143,7 @@ contract Vote is Ownable {
         for (uint i = 1; i < proposals.length; i++) {
             
             //in case of a draw result, the first proposal wins
-            if (proposals[i].voteCount > proposals[i - 1].voteCount)
+            if (proposals[i].voteCount > proposals[winningProposalId].voteCount)
                 winningProposalId = i;
         }    
     }
@@ -162,7 +162,7 @@ library Errors {
     string constant VOTE_NOT_OPENED = "Vote period not opened yet";
 
     string constant VOTE_NOT_CLOSED = "Vote period not closed yet";
-
+if (proposals[i].voteCount > proposals[winningProposalId].voteCount)
     string constant VOTE_ENDED = "Vote has already reached final step";
 
     string constant USER_NOT_REGISTERED = "User not registered";
