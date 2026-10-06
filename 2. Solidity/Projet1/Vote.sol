@@ -31,9 +31,12 @@ contract Vote is Ownable {
     /* STATES */
 
     WorkflowStatus public status = WorkflowStatus.RegisteringVoters;
-    mapping (address => Voter) voters;
-    Proposal[] proposals;
-    uint winningProposalId;
+    
+    bool _hasVoters;
+    mapping (address => Voter) _voters;
+    Proposal[] _proposals;
+    bool _hasVotes;
+    uint[] _winningProposalIds;
 
     /* CONSTRUCTORS */
 
@@ -51,7 +54,7 @@ contract Vote is Ownable {
     /* MODIFIERS */
 
     modifier isRegistered {
-        require(voters[msg.sender].isRegistered, Errors.USER_NOT_REGISTERED);
+        require(_voters[msg.sender].isRegistered, Errors.USER_NOT_REGISTERED);
         _;
     }
 
@@ -62,14 +65,22 @@ contract Vote is Ownable {
     function nextStatus() external onlyOwner {
         require(type(WorkflowStatus).max != status, Errors.VOTE_ENDED);
 
+        if (WorkflowStatus.RegisteringVoters == status) {
+            require(_hasVoters, Errors.NO_VOTERS);
+        }
+
         if (WorkflowStatus.ProposalsRegistrationStarted == status) {
-            require(proposals.length > 0, Errors.PROPOSAL_EMPTY);
+            require(_proposals.length > 0, Errors.PROPOSAL_EMPTY);
+        }
+
+        if (WorkflowStatus.VotingSessionStarted == status) {
+            require(_hasVotes, Errors.NO_VOTES);
         }
 
         status = WorkflowStatus(uint(status) + 1);
 
         if (type(WorkflowStatus).max == status)
-            closeVote();
+            _closeVote();
 
         emit WorkflowStatusChange(WorkflowStatus(uint(status) - 1), status);
     }
@@ -77,11 +88,13 @@ contract Vote is Ownable {
     //owner could register allowed voters
     function register(address address_) external onlyOwner {
         require(WorkflowStatus.RegisteringVoters == status, Errors.REGISTER_NOT_OPENED);
-        require(!voters[address_].isRegistered, Errors.USER_ALREADY_REGISTERED);
+        require(!_voters[address_].isRegistered, Errors.USER_ALREADY_REGISTERED);
 
         Voter memory voter;
         voter.isRegistered = true;
-        voters[address_] = voter;
+        _voters[address_] = voter;
+
+        _hasVoters = true;
 
         emit VoterRegistered(address_);
     }
@@ -92,21 +105,23 @@ contract Vote is Ownable {
 
         Proposal memory proposal;
         proposal.description = description;
-        proposals.push(proposal);
+        _proposals.push(proposal);
 
-        emit ProposalRegistered(proposals.length - 1);
+        emit ProposalRegistered(_proposals.length - 1);
     }
 
     //allowed users could send a vote
     function vote(uint proposalId) external isRegistered {//everyone could see proposals
         require(WorkflowStatus.VotingSessionStarted == status, Errors.VOTE_NOT_OPENED);
-        require(!voters[msg.sender].hasVoted, Errors.USER_ALREADY_VOTED);
-        require(proposalId < proposals.length, Errors.PROPOSAL_ID_NOT_FOUND);
+        require(!_voters[msg.sender].hasVoted, Errors.USER_ALREADY_VOTED);
+        require(proposalId < _proposals.length, Errors.PROPOSAL_ID_NOT_FOUND);
 
-        voters[msg.sender].hasVoted = true;
-        voters[msg.sender].votedProposalId = proposalId;
+        _voters[msg.sender].hasVoted = true;
+        _voters[msg.sender].votedProposalId = proposalId;
 
-        proposals[proposalId].voteCount++; 
+        _proposals[proposalId].voteCount++; 
+
+        _hasVotes = true;
 
         emit Voted(msg.sender, proposalId);
     }
@@ -115,41 +130,50 @@ contract Vote is Ownable {
 
     //everyone could see proposals
     function getProposals() external view returns (Proposal[] memory) {
-        require(proposals.length > 0, Errors.PROPOSAL_EMPTY);
-        return proposals;
+        require(_proposals.length > 0, Errors.PROPOSAL_EMPTY);
+        return _proposals;
     }
 
     //only allowed users could observe other user votes
     function getUserVote(address address_) external view isRegistered returns (uint) {
-        require(voters[address_].isRegistered, Errors.USER_NOT_REGISTERED);
-        require(voters[address_].hasVoted, Errors.USER_NO_VOTE);
+        require(_voters[address_].isRegistered, Errors.USER_NOT_REGISTERED);
+        require(_voters[address_].hasVoted, Errors.USER_NO_VOTE);
 
-        return voters[address_].votedProposalId;
+        return _voters[address_].votedProposalId;
     }
 
     //everyone could see the winning proposal
-    function getWinner() external view returns (Proposal memory) {
+    function getWinner() external view returns (uint[] memory) {
         require(WorkflowStatus.VotesTallied == status, Errors.VOTE_NOT_CLOSED);
-        return proposals[winningProposalId];
+        return _winningProposalIds;
     }
 
     /* PRIVATE FUNCTIONS */
 
-    //automatically resolves the winner proposal
-    function closeVote() private {
+    //automatically resolves the winning proposals
+    //draw is allowed
+    function _closeVote() private {
         assert(WorkflowStatus.VotesTallied == status);
-        assert(proposals.length > 0);
+        assert(_proposals.length > 0);
 
-        for (uint i = 1; i < proposals.length; i++) {
-            
-            //in case of a draw result, the first proposal wins
-            if (proposals[i].voteCount > proposals[winningProposalId].voteCount)
-                winningProposalId = i;
-        }    
-    }
+        uint maxCount;
+        for (uint i = 0; i < _proposals.length; i++) {
+
+            if (_proposals[i].voteCount > maxCount)
+                maxCount = _proposals[i].voteCount;
+        }
+
+        //draw: every proposal reaching maxCount wins
+        for (uint i = 0; i < _proposals.length; i++) {
+            if (_proposals[i].voteCount == maxCount)
+                _winningProposalIds.push(i);
+        }
+    }   
 }
 
 library Errors {
+
+    string constant NO_VOTERS = "No voters registered";
 
     string constant REGISTER_NOT_OPENED = "Registering period not opened";
 
@@ -158,6 +182,8 @@ library Errors {
     string constant PROPOSAL_EMPTY = "No proposal yet";
 
     string constant PROPOSAL_ID_NOT_FOUND = "Proposal ID not found";
+
+    string constant NO_VOTES = "No votes yet";
 
     string constant VOTE_NOT_OPENED = "Vote period not opened yet";
 
