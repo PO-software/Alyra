@@ -32,11 +32,11 @@ contract Vote is Ownable {
 
     WorkflowStatus public status = WorkflowStatus.RegisteringVoters;
     
-    bool _hasVoters;
-    mapping (address => Voter) _voters;
-    Proposal[] _proposals;
-    bool _hasVotes;
-    uint[] _winningProposalIds;
+    bool private _hasVoters;
+    mapping (address => Voter) private _voters;
+    Proposal[] private _proposals;
+    bool private _hasVotes;
+    uint[] private _winningProposalIds;
 
     /* CONSTRUCTORS */
 
@@ -165,6 +165,7 @@ contract Vote is Ownable {
 
         //draw: every proposal reaching maxCount wins
         for (uint i = 0; i < _proposals.length; i++) {
+            
             if (_proposals[i].voteCount == maxCount)
                 _winningProposalIds.push(i);
         }
