@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: MIT
 
 pragma solidity = 0.8.34;
 
@@ -9,14 +9,14 @@ contract Vote is Ownable {
     /* TYPES */
 
     struct Voter {
-        bool isRegistered; 
-        bool hasVoted; 
-        uint votedProposalId; 
+        bool _isRegistered; 
+        bool _hasVoted; 
+        uint _votedProposalId; 
     } 
 
     struct Proposal { 
-        string description; 
-        uint voteCount;    
+        string _description; 
+        uint _voteCount;    
     }
 
     enum WorkflowStatus { 
@@ -54,7 +54,7 @@ contract Vote is Ownable {
     /* MODIFIERS */
 
     modifier isRegistered {
-        require(_voters[msg.sender].isRegistered, Errors.USER_NOT_REGISTERED);
+        require(_voters[msg.sender]._isRegistered, Errors.USER_NOT_REGISTERED);
         _;
     }
 
@@ -88,10 +88,10 @@ contract Vote is Ownable {
     //owner could register allowed voters
     function register(address address_) external onlyOwner {
         require(WorkflowStatus.RegisteringVoters == status, Errors.REGISTER_NOT_OPENED);
-        require(!_voters[address_].isRegistered, Errors.USER_ALREADY_REGISTERED);
+        require(!_voters[address_]._isRegistered, Errors.USER_ALREADY_REGISTERED);
 
         Voter memory voter;
-        voter.isRegistered = true;
+        voter._isRegistered = true;
         _voters[address_] = voter;
 
         _hasVoters = true;
@@ -104,7 +104,7 @@ contract Vote is Ownable {
         require(WorkflowStatus.ProposalsRegistrationStarted == status, Errors.PROPOSAL_NOT_OPENED);
 
         Proposal memory proposal;
-        proposal.description = description;
+        proposal._description = description;
         _proposals.push(proposal);
 
         emit ProposalRegistered(_proposals.length - 1);
@@ -113,13 +113,13 @@ contract Vote is Ownable {
     //allowed users could send a vote
     function vote(uint proposalId) external isRegistered {//everyone could see proposals
         require(WorkflowStatus.VotingSessionStarted == status, Errors.VOTE_NOT_OPENED);
-        require(!_voters[msg.sender].hasVoted, Errors.USER_ALREADY_VOTED);
+        require(!_voters[msg.sender]._hasVoted, Errors.USER_ALREADY_VOTED);
         require(proposalId < _proposals.length, Errors.PROPOSAL_ID_NOT_FOUND);
 
-        _voters[msg.sender].hasVoted = true;
-        _voters[msg.sender].votedProposalId = proposalId;
+        _voters[msg.sender]._hasVoted = true;
+        _voters[msg.sender]._votedProposalId = proposalId;
 
-        _proposals[proposalId].voteCount++; 
+        _proposals[proposalId]._voteCount++; 
 
         _hasVotes = true;
 
@@ -136,10 +136,10 @@ contract Vote is Ownable {
 
     //only allowed users could observe other user votes
     function getUserVote(address address_) external view isRegistered returns (uint) {
-        require(_voters[address_].isRegistered, Errors.USER_NOT_REGISTERED);
-        require(_voters[address_].hasVoted, Errors.USER_NO_VOTE);
+        require(_voters[address_]._isRegistered, Errors.USER_NOT_REGISTERED);
+        require(_voters[address_]._hasVoted, Errors.USER_NO_VOTE);
 
-        return _voters[address_].votedProposalId;
+        return _voters[address_]._votedProposalId;
     }
 
     //everyone could see the winning proposal
@@ -159,14 +159,14 @@ contract Vote is Ownable {
         uint maxCount;
         for (uint i = 0; i < _proposals.length; i++) {
 
-            if (_proposals[i].voteCount > maxCount)
-                maxCount = _proposals[i].voteCount;
+            if (_proposals[i]._voteCount > maxCount)
+                maxCount = _proposals[i]._voteCount;
         }
 
         //draw: every proposal reaching maxCount wins
         for (uint i = 0; i < _proposals.length; i++) {
             
-            if (_proposals[i].voteCount == maxCount)
+            if (_proposals[i]._voteCount == maxCount)
                 _winningProposalIds.push(i);
         }
     }   

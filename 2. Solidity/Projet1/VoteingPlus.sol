@@ -1,9 +1,10 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: MIT
 
 pragma solidity = 0.8.34;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+//Contract that allows multiple voting sessions
 contract VotingPlus is Ownable {
 
     /* TYPES */
@@ -20,14 +21,14 @@ contract VotingPlus is Ownable {
     }
 
     struct Voter {
-        bool isRegistered; 
-        bool hasVoted; 
-        uint votedProposalId; 
+        bool _isRegistered; 
+        bool _hasVoted; 
+        uint _votedProposalId; 
     } 
 
     struct Proposal { 
-        string description; 
-        uint voteCount;    
+        string _description; 
+        uint _voteCount;    
     }
 
     enum WorkflowStatus { 
@@ -45,6 +46,7 @@ contract VotingPlus is Ownable {
     mapping (address => bool) private _voteOwners;
 
     /* CONSTRUCTOR */
+
     constructor() Ownable(msg.sender) {
 
     }
@@ -70,7 +72,7 @@ contract VotingPlus is Ownable {
     }
 
     modifier isRegistered(uint voteId) {
-        require(_votes[voteId]._voters[msg.sender].isRegistered, Errors.USER_NOT_REGISTERED);
+        require(_votes[voteId]._voters[msg.sender]._isRegistered, Errors.USER_NOT_REGISTERED);
         _;
     }
 
@@ -122,9 +124,9 @@ contract VotingPlus is Ownable {
     function registerVoter(uint voteId, address address_) external voteExists(voteId) isVoteOwner(voteId) {
         Vote storage vote = _votes[voteId];
         require(WorkflowStatus.RegisteringVoters == vote._status, Errors.REGISTER_NOT_OPENED);
-        require(!vote._voters[address_].isRegistered, Errors.USER_ALREADY_REGISTERED);
+        require(!vote._voters[address_]._isRegistered, Errors.USER_ALREADY_REGISTERED);
 
-        vote._voters[address_].isRegistered = true;
+        vote._voters[address_]._isRegistered = true;
 
         vote._hasVoters = true;
 
@@ -137,7 +139,7 @@ contract VotingPlus is Ownable {
         require(WorkflowStatus.ProposalsRegistrationStarted == vote._status, Errors.PROPOSAL_NOT_OPENED);
 
         Proposal memory proposal;
-        proposal.description = description;
+        proposal._description = description;
         vote._proposals.push(proposal);
 
         emit ProposalRegistered(voteId, vote._proposals.length - 1);
@@ -147,13 +149,13 @@ contract VotingPlus is Ownable {
     function sendVote(uint voteId, uint proposalId) external voteExists(voteId) isRegistered(voteId) {
         Vote storage vote = _votes[voteId];
         require(WorkflowStatus.VotingSessionStarted == vote._status, Errors.VOTE_NOT_OPENED);
-        require(!vote._voters[msg.sender].hasVoted, Errors.USER_ALREADY_VOTED);
+        require(!vote._voters[msg.sender]._hasVoted, Errors.USER_ALREADY_VOTED);
         require(proposalId < vote._proposals.length, Errors.PROPOSAL_ID_NOT_FOUND);
 
-        vote._voters[msg.sender].hasVoted = true;
-        vote._voters[msg.sender].votedProposalId = proposalId;
+        vote._voters[msg.sender]._hasVoted = true;
+        vote._voters[msg.sender]._votedProposalId = proposalId;
 
-        vote._proposals[proposalId].voteCount++; 
+        vote._proposals[proposalId]._voteCount++; 
 
         vote._hasVotes = true;
 
@@ -170,10 +172,10 @@ contract VotingPlus is Ownable {
 
     //only allowed users could observe other user votes
     function getUserVote(uint voteId, address address_) external view voteExists(voteId) isRegistered(voteId) returns (uint) {
-        require(_votes[voteId]._voters[address_].isRegistered, Errors.USER_NOT_REGISTERED);
-        require(_votes[voteId]._voters[address_].hasVoted, Errors.USER_NO_VOTE);
+        require(_votes[voteId]._voters[address_]._isRegistered, Errors.USER_NOT_REGISTERED);
+        require(_votes[voteId]._voters[address_]._hasVoted, Errors.USER_NO_VOTE);
 
-        return _votes[voteId]._voters[address_].votedProposalId;
+        return _votes[voteId]._voters[address_]._votedProposalId;
     }
 
     //everyone could see the winning proposal
@@ -193,14 +195,14 @@ contract VotingPlus is Ownable {
         uint maxCount;
         for (uint i = 0; i < vote._proposals.length; i++) {
 
-            if (vote._proposals[i].voteCount > maxCount)
-                maxCount = vote._proposals[i].voteCount;
+            if (vote._proposals[i]._voteCount > maxCount)
+                maxCount = vote._proposals[i]._voteCount;
         }
 
         //draw: every proposal reaching maxCount wins
         for (uint i = 0; i < vote._proposals.length; i++) {
             
-            if (vote._proposals[i].voteCount == maxCount)
+            if (vote._proposals[i]._voteCount == maxCount)
                 vote._winningProposalIds.push(i);
         }
     }  
