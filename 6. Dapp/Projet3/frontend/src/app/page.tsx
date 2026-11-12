@@ -14,7 +14,7 @@ import { WorkflowStatus } from "@/lib/voting/status"
 
 export default function Home() {
   const { chain, deployment, account, isConnected, isCorrectChain } = useAppChain()
-  const { snapshot, error } = useVotingData({ chainId: chain.id, deployment, account })
+  const { snapshot, error, refresh } = useVotingData({ chainId: chain.id, deployment, account })
   const ready = snapshot?.kind === "ready" ? snapshot : undefined
   const role = ready ? getRole(account, ready.owner, ready.model.voters) : undefined
 
@@ -28,12 +28,15 @@ export default function Home() {
         <ProgressSteps status={ready.status} />
         <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
           <ActionsPanel
+            key={`${chain.id}:${account ?? "none"}`}
             snapshot={ready}
             role={role ?? { isAdmin: false, isVoter: false }}
             account={account}
             chain={chain}
+            deployment={deployment}
             isConnected={isConnected}
             isCorrectChain={isCorrectChain}
+            refresh={refresh}
           />
           <div className="min-w-0 space-y-6">
             {ready.status === WorkflowStatus.VotesTallied && <ResultCard snapshot={ready} />}
