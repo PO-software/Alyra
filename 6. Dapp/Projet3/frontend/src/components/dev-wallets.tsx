@@ -1,6 +1,6 @@
 "use client"
 
-import { useAccount, useConnect, useDisconnect } from "wagmi"
+import { useAccount, useConnect, useConnections, useDisconnect } from "wagmi"
 
 import { Button } from "@/components/ui/button"
 import { HARDHAT_ACCOUNTS, devWalletId } from "@/config/dev-wallets"
@@ -10,6 +10,7 @@ const LABELS = ["#0 Admin", "#1", "#2", "#3", "#4 Visiteur"]
 function DevWalletsPanel() {
   const { connectors, connect } = useConnect()
   const { disconnect } = useDisconnect()
+  const connections = useConnections()
   const { connector: current } = useAccount()
 
   return (
@@ -30,7 +31,12 @@ function DevWalletsPanel() {
             </Button>
           )
         })}
-        <Button size="sm" variant="ghost" onClick={() => disconnect()}>
+        <Button
+          size="sm"
+          variant="ghost"
+          // wagmi keeps one connection per connector: close them all, not just the current one.
+          onClick={() => connections.forEach(({ connector }) => disconnect({ connector }))}
+        >
           Déconnecter
         </Button>
       </div>
