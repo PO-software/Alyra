@@ -1,4 +1,15 @@
-# Tests du contrat Voting
+# Contrat Voting
+
+Contrat `contracts/Voting.sol`, ses tests et son module de déploiement Ignition (`ignition/modules/Voting.ts`). Vue d'ensemble du projet : voir le [README du projet](../README.md).
+
+```shell
+pnpm test             # 89 tests
+pnpm node             # nœud Hardhat local (chain id 31337)
+pnpm deploy:local     # déploie à neuf sur le nœud local (--reset)
+pnpm deploy:sepolia   # déploie sur Sepolia (keystore : SEPOLIA_RPC_URL, SEPOLIA_PRIVATE_KEY)
+```
+
+## Tests
 
 Tests écrits en TypeScript (`mocha` + `ethers`) dans `test/Voting.ts` : 89 tests, 100 % des lignes de `Voting.sol` couvertes.
 
@@ -15,6 +26,6 @@ Chaque test part d'une fixture (`loadFixture`) correspondant à un statut du wor
 Lancer les tests :
 
 ```shell
-pnpm hardhat test
+pnpm test
 pnpm hardhat test mocha --coverage   # avec couverture
 ```
