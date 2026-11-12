@@ -49,7 +49,8 @@ export async function POST(request: Request): Promise<Response> {
   const methodById = new Map(requests.map((r) => [JSON.stringify(r.id), r.method]))
   const filter = (item: RpcResponseItem): RpcResponseItem => {
     const method = methodById.get(JSON.stringify(item.id))
-    if (method && "result" in item && !isAllowedRpcResult(method, item.result, deployment.address)) {
+    // An answer we cannot match to a request is never let through (fail closed).
+    if ("result" in item && (method === undefined || !isAllowedRpcResult(method, item.result, deployment.address))) {
       return { jsonrpc: "2.0", id: item.id, error: { code: -32001, message: "Forbidden" } }
     }
     return item

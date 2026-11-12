@@ -28,6 +28,8 @@ export class LogSync {
   private logs: Log[] = []
   private lastSynced: bigint | undefined
   private inFlight: Promise<Log[]> | undefined
+  /** What the last completed sync did: logs appended, and whether a rewound chain forced a restart. */
+  lastChange: { added: number; reset: boolean } = { added: 0, reset: false }
 
   constructor(
     private readonly client: ReadClient,
@@ -43,12 +45,16 @@ export class LogSync {
   }
 
   private async run(): Promise<Log[]> {
-    const latest = await this.client.getBlockNumber()
+    // cacheTime 0: viem otherwise reuses the block number for up to 4 s, delaying our own transactions.
+    const latest = await this.client.getBlockNumber({ cacheTime: 0 })
+    let reset = false
     if (this.lastSynced !== undefined && latest < this.lastSynced) {
       // The chain went backwards (local node restarted): what we had no longer exists.
       this.logs = []
       this.lastSynced = undefined
+      reset = true
     }
+    this.lastChange = { added: 0, reset }
     if (latest < this.deploymentBlock) return this.logs
 
     const fromBlock = this.lastSynced === undefined ? this.deploymentBlock : this.lastSynced + 1n
@@ -56,6 +62,7 @@ export class LogSync {
       const fresh = await getLogsAdaptive(this.client, { address: this.address, fromBlock, toBlock: latest })
       this.logs = [...this.logs, ...fresh]
       this.lastSynced = latest
+      this.lastChange = { added: fresh.length, reset }
     }
     return this.logs
   }

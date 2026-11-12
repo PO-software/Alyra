@@ -19,7 +19,10 @@ export function validateVoterAddress(
   return { ok: true, address }
 }
 
-const normalize = (text: string) => text.trim().toLocaleLowerCase("fr")
+/** Whitespace plus invisible format characters (zero-width space/joiners, BOM…). */
+const INVISIBLE = /^[\s\p{Cf}]*$/u
+
+const normalize = (text: string) => text.normalize("NFC").trim().toLocaleLowerCase("fr")
 
 export function validateProposal(
   input: string,
@@ -28,7 +31,7 @@ export function validateProposal(
   proposalCount: number,
 ): { ok: true; description: string } | { ok: false; error: string } {
   const description = input.trim()
-  if (description === "") return { ok: false, error: "La proposition ne peut pas être vide." }
+  if (INVISIBLE.test(description)) return { ok: false, error: "La proposition ne peut pas être vide." }
   if ([...description].length > MAX_DESCRIPTION_LENGTH) {
     return { ok: false, error: `${MAX_DESCRIPTION_LENGTH} caractères maximum.` }
   }

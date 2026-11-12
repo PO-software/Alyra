@@ -8,18 +8,22 @@ import { usePublicClient } from "wagmi"
 import { pollingInterval } from "@/config/chains"
 import type { Deployment } from "@/config/deployments"
 import { LogSync, type ReadClient } from "@/lib/chain/logs"
-import { type VotingSnapshot, fetchVotingSnapshot } from "@/lib/voting/snapshot"
+import { type ReadCache, type VotingSnapshot, fetchVotingSnapshot } from "@/lib/voting/snapshot"
 
-type ContractState = { logSync: LogSync; descriptionCache: Map<Hash, string | null> }
+type ContractState = { logSync: LogSync; descriptionCache: Map<Hash, string | null>; readCache: ReadCache }
 
-/** One log history and description cache per contract, shared by every query on it. */
+/** One log history, description cache and read cache per contract, shared by every query on it. */
 const contractStates = new Map<string, ContractState>()
 
 function contractState(client: ReadClient, deployment: Deployment): ContractState {
   const key = `${deployment.chainId}:${deployment.address}`
   let state = contractStates.get(key)
   if (!state) {
-    state = { logSync: new LogSync(client, deployment.address, deployment.deploymentBlock), descriptionCache: new Map() }
+    state = {
+      logSync: new LogSync(client, deployment.address, deployment.deploymentBlock),
+      descriptionCache: new Map(),
+      readCache: {},
+    }
     contractStates.set(key, state)
   }
   return state

@@ -31,6 +31,8 @@ export function createWagmiConfig() {
     chains: appChains,
     connectors: [...walletConnectors, ...devConnectors()],
     transports: Object.fromEntries(appChains.map((chain) => [chain.id, transports[chain.id]])),
+    // wagmi batches reads through Multicall3 by default; /api/rpc only lets calls to the Voting contract through.
+    batch: { multicall: false },
     ssr: true,
   })
 }

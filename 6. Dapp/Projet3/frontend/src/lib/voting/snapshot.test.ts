@@ -20,7 +20,8 @@ const logs = [
   eventLog("Voted", [ACCOUNTS.voter1, 1n], { blockNumber: 7n }),
 ]
 
-function fakeClient(options: { code?: Hex; proposalInput?: Hex }) {
+function fakeClient(options: { code?: Hex; proposalInput?: Hex; chain?: { latest: bigint; logs: typeof logs } }) {
+  const chain = options.chain ?? { latest: 7n, logs }
   const readContract = vi.fn(async ({ functionName }: { functionName: string; args?: unknown[] }) => {
     switch (functionName) {
       case "owner":
@@ -34,17 +35,20 @@ function fakeClient(options: { code?: Hex; proposalInput?: Hex }) {
     }
     throw new Error(`unexpected ${functionName}`)
   })
-  const getLogs = vi.fn(async () => logs)
+  const getLogs = vi.fn(async ({ fromBlock, toBlock }: { fromBlock: bigint; toBlock: bigint }) =>
+    chain.logs.filter((log) => log.blockNumber! >= fromBlock && log.blockNumber! <= toBlock),
+  )
+  const getCode = vi.fn(async () => options.code)
   const client = {
-    getCode: vi.fn(async () => options.code),
-    getBlockNumber: vi.fn(async () => 7n),
+    getCode,
+    getBlockNumber: vi.fn(async () => chain.latest),
     getLogs,
     getTransaction: vi.fn(async ({ hash }: { hash: Hash }) => ({
       input: hash === txHash(4) ? (options.proposalInput ?? "0x") : "0x",
     })),
     readContract,
   } as unknown as ReadClient
-  return { client, readContract, getLogs }
+  return { client, readContract, getLogs, getCode }
 }
 
 const run = (client: ReadClient, account?: `0x${string}`) =>
@@ -90,6 +94,26 @@ describe("fetchVotingSnapshot", () => {
     expect(readContract).toHaveBeenCalledWith(
       expect.objectContaining({ functionName: "getOneProposal", args: [1n], account: ACCOUNTS.voter1 }),
     )
+  })
+
+  it("skips the contract reads while no new logs arrive, and reads again when they do", async () => {
+    const chain = { latest: 7n, logs: [...logs] }
+    const { client, readContract, getCode } = fakeClient({ code: "0x6080", chain })
+    const logSync = new LogSync(client, CONTRACT, 0n)
+    const readCache = {}
+    const poll = () => fetchVotingSnapshot({ client, deployment, logSync, descriptionCache: new Map(), readCache })
+
+    await poll()
+    const readsAfterFirstPoll = readContract.mock.calls.length
+    await poll() // nothing new on chain
+    expect(getCode).toHaveBeenCalledTimes(1)
+    expect(readContract.mock.calls.length).toBe(readsAfterFirstPoll)
+
+    chain.latest = 8n
+    chain.logs.push(eventLog("WorkflowStatusChange", [3, 4], { blockNumber: 8n }))
+    await poll() // a state change always emits an event
+    expect(getCode).toHaveBeenCalledTimes(2)
+    expect(readContract.mock.calls.length).toBe(readsAfterFirstPoll * 2)
   })
 
   it("does not call the voter-only getter for a visitor", async () => {

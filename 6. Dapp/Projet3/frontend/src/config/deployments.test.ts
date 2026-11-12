@@ -17,6 +17,11 @@ describe("parseDeployment", () => {
     expect(parseDeployment(31337, VALID, undefined)?.deploymentBlock).toBe(0n)
   })
 
+  it("requires the deployment block outside the local node, so logs are never scanned from block 0", () => {
+    expect(parseDeployment(11155111, VALID, undefined)).toBeUndefined()
+    expect(parseDeployment(11155111, VALID, "")).toBeUndefined()
+  })
+
   it("rejects a missing address", () => {
     expect(parseDeployment(31337, undefined, "0")).toBeUndefined()
   })

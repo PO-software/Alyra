@@ -23,5 +23,5 @@ export const appChains = selectChains({
   hasSepolia: getDeployment(sepolia.id) !== undefined,
 })
 
-/** Polling interval for contract data: the local node mines instantly, Sepolia every ~12 s. */
-export const pollingInterval = (chainId: number) => (chainId === hardhat.id ? 2_000 : 6_000)
+/** Polling interval for contract data: the local node mines instantly, Sepolia makes a block every ~12 s. */
+export const pollingInterval = (chainId: number) => (chainId === hardhat.id ? 2_000 : 12_000)

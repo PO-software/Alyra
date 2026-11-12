@@ -21,28 +21,53 @@ export type VotingSnapshot =
       tally: Tally
     }
 
-export async function fetchVotingSnapshot(args: {
-  client: ReadClient
-  deployment: Deployment
-  logSync: LogSync
-  descriptionCache: Map<Hash, string | null>
-  account?: Address
-}): Promise<VotingSnapshot> {
-  const { client, deployment, logSync, descriptionCache, account } = args
-  const address = deployment.address
+type ContractReads = { owner: Address; status: WorkflowStatus; winningProposalId: bigint }
 
+/** The last contract reads, reused while no new event shows that the state changed. */
+export type ReadCache = { reads?: ContractReads }
+
+async function readContractState(client: ReadClient, address: Address): Promise<ContractReads | undefined> {
   const code = await client.getCode({ address })
-  if (!code || code === "0x") return { kind: "not-deployed" }
-
-  // No multicall: the local Hardhat node has no Multicall3 contract.
+  if (!code || code === "0x") return undefined
+  // Three plain eth_calls: no multicall (the local node has no Multicall3, and /api/rpc only allows the Voting contract).
   const [owner, rawStatus, winningProposalId] = await Promise.all([
     client.readContract({ address, abi: votingAbi, functionName: "owner" }),
     client.readContract({ address, abi: votingAbi, functionName: "workflowStatus" }),
     client.readContract({ address, abi: votingAbi, functionName: "winningProposalID" }),
   ])
-  const status = toWorkflowStatus(rawStatus)
+  return { owner, status: toWorkflowStatus(rawStatus), winningProposalId }
+}
 
-  const events = parseVotingLogs(await logSync.sync())
+export async function fetchVotingSnapshot(args: {
+  client: ReadClient
+  deployment: Deployment
+  logSync: LogSync
+  descriptionCache: Map<Hash, string | null>
+  readCache?: ReadCache
+  account?: Address
+}): Promise<VotingSnapshot> {
+  const { client, deployment, logSync, descriptionCache, account } = args
+  const readCache = args.readCache ?? {}
+  const address = deployment.address
+
+  // First poll: check the contract exists before scanning its history.
+  let reads = readCache.reads ?? (await readContractState(client, address))
+  if (!reads) return { kind: "not-deployed" }
+
+  const logs = await logSync.sync()
+  // Every state change of this contract emits an event: with no new logs, the cached reads still hold.
+  const { added, reset } = logSync.lastChange
+  if (readCache.reads && (added > 0 || reset)) {
+    const fresh = await readContractState(client, address)
+    if (!fresh) {
+      readCache.reads = undefined
+      return { kind: "not-deployed" }
+    }
+    reads = fresh
+  }
+  readCache.reads = reads
+
+  const events = parseVotingLogs(logs)
   const descriptions = await fetchDescriptions(client, events, descriptionCache)
 
   const isVoter =
@@ -66,6 +91,6 @@ export async function fetchVotingSnapshot(args: {
     }
   }
 
-  const model = buildVotingModel({ events, descriptions, status })
-  return { kind: "ready", owner, status, winningProposalId, model, tally: computeTally(model.proposals, model.votes) }
+  const model = buildVotingModel({ events, descriptions, status: reads.status })
+  return { kind: "ready", ...reads, model, tally: computeTally(model.proposals, model.votes) }
 }

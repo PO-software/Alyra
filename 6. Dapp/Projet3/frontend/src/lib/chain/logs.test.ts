@@ -74,6 +74,25 @@ describe("LogSync", () => {
     expect(getLogs).not.toHaveBeenCalled()
   })
 
+  it("asks the node for a fresh block number every time (no client-side cache)", async () => {
+    const { client, getBlockNumber } = fakeNode([], { latest: [5n] })
+    await new LogSync(client, CONTRACT, 0n).sync()
+    expect(getBlockNumber).toHaveBeenCalledWith({ cacheTime: 0 })
+  })
+
+  it("reports what the last sync changed", async () => {
+    const pool = [at(10n)]
+    const { client } = fakeNode(pool, { latest: [50n, 60n, 3n] })
+    const sync = new LogSync(client, CONTRACT, 0n)
+
+    await sync.sync()
+    expect(sync.lastChange).toEqual({ added: 1, reset: false })
+    await sync.sync()
+    expect(sync.lastChange).toEqual({ added: 0, reset: false })
+    await sync.sync()
+    expect(sync.lastChange).toEqual({ added: 0, reset: true })
+  })
+
   it("shares one fetch between overlapping calls", async () => {
     const { client, getLogs } = fakeNode([at(10n)], { latest: [50n, 50n] })
     const sync = new LogSync(client, CONTRACT, 0n)

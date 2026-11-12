@@ -20,9 +20,11 @@ describe("checkRpcRequest", () => {
       rpc("eth_getTransactionByHash", ["0x" + "11".repeat(32)]),
       rpc("eth_getTransactionReceipt", ["0x" + "11".repeat(32)]),
       rpc("eth_getBlockByNumber", ["latest", false]),
+      // viem's replacement check while waiting for a receipt asks for full transactions
+      rpc("eth_getBlockByNumber", ["0x10", true]),
     ]
     for (const request of allowed) expect(checkRpcRequest(request, CONTRACT)).toEqual({ ok: true })
-    expect(checkRpcRequest(allowed, CONTRACT)).toEqual({ ok: true })
+    expect(checkRpcRequest(allowed.map((request, id) => ({ ...request, id })), CONTRACT)).toEqual({ ok: true })
   })
 
   it("refuses methods outside the allowlist, writes included", () => {
@@ -38,15 +40,23 @@ describe("checkRpcRequest", () => {
     expect(checkRpcRequest(rpc("eth_getCode", [ACCOUNTS.voter1, "latest"]), CONTRACT)).toMatchObject(forbidden)
   })
 
-  it("refuses full-transaction blocks", () => {
-    expect(checkRpcRequest(rpc("eth_getBlockByNumber", ["latest", true]), CONTRACT)).toMatchObject(forbidden)
+  it("refuses an eth_call carrying a state override, which could run any code at the Voting address", () => {
+    const override = { [CONTRACT]: { code: "0x6000" } }
+    expect(checkRpcRequest(rpc("eth_call", [{ to: CONTRACT, data: "0x" }, "latest", override]), CONTRACT)).toMatchObject(
+      forbidden,
+    )
+  })
+
+  it("refuses requests without an id and batches with duplicate ids", () => {
+    expect(checkRpcRequest({ jsonrpc: "2.0", method: "eth_chainId", params: [] }, CONTRACT)).toMatchObject(malformed)
+    expect(checkRpcRequest([rpc("eth_chainId", [], 1), rpc("eth_blockNumber", [], 1)], CONTRACT)).toMatchObject(malformed)
   })
 
   it("refuses oversized batches, a forbidden item inside a batch, and malformed bodies", () => {
     const tooMany = Array.from({ length: MAX_BATCH + 1 }, (_, i) => rpc("eth_chainId", [], i))
     expect(checkRpcRequest(tooMany, CONTRACT)).toMatchObject(malformed)
     expect(checkRpcRequest([], CONTRACT)).toMatchObject(malformed)
-    expect(checkRpcRequest([rpc("eth_chainId"), rpc("eth_sendRawTransaction", ["0x00"])], CONTRACT)).toMatchObject(forbidden)
+    expect(checkRpcRequest([rpc("eth_chainId", [], 1), rpc("eth_sendRawTransaction", ["0x00"], 2)], CONTRACT)).toMatchObject(forbidden)
     expect(checkRpcRequest({}, CONTRACT)).toMatchObject(malformed)
     expect(checkRpcRequest(null, CONTRACT)).toMatchObject(malformed)
   })

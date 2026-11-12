@@ -64,6 +64,17 @@ describe("fetchDescriptions", () => {
     )
   })
 
+  it("tries again later when fetching a transaction failed (no caching of failures)", async () => {
+    const inputs: Record<Hash, `0x${string}` | Error> = { [txHash(1)]: new Error("429 Too Many Requests") }
+    const { client, getTransaction } = fakeClient(inputs)
+    const cache = new Map<Hash, string | null>()
+
+    expect(await fetchDescriptions(client, [proposal(1n, txHash(1))], cache)).toEqual(new Map([[1n, null]]))
+    inputs[txHash(1)] = addProposalInput("Parc")
+    expect(await fetchDescriptions(client, [proposal(1n, txHash(1))], cache)).toEqual(new Map([[1n, "Parc"]]))
+    expect(getTransaction).toHaveBeenCalledTimes(2)
+  })
+
   it("gives null instead of throwing when a transaction cannot be fetched", async () => {
     const { client } = fakeClient({ [txHash(1)]: new Error("not found") })
     expect(await fetchDescriptions(client, [proposal(1n, txHash(1))], new Map())).toEqual(new Map([[1n, null]]))

@@ -29,7 +29,7 @@ export async function fetchDescriptions(
         const { input } = await client.getTransaction({ hash })
         cache.set(hash, decodeProposalDescription(input))
       } catch {
-        cache.set(hash, null)
+        // Not cached: a failed fetch (rate limit, network) is retried on the next poll.
       }
     }
   }

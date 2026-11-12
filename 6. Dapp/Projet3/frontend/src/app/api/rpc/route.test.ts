@@ -68,6 +68,15 @@ describe("POST /api/rpc", () => {
     ])
   })
 
+  it("treats an answer it cannot match to a request as forbidden", async () => {
+    fetchMock.mockResolvedValue(Response.json({ jsonrpc: "2.0", id: 2, result: { to: ACCOUNTS.voter1, input: "0x" } }))
+    const POST = await loadRoute()
+
+    const response = await POST(post(rpc("eth_getTransactionByHash", ["0x" + "11".repeat(32)], 1)))
+
+    expect(await response.json()).toEqual({ jsonrpc: "2.0", id: 2, error: { code: -32001, message: "Forbidden" } })
+  })
+
   it("answers 500 when the node URL is not configured", async () => {
     const POST = await loadRoute({ url: "" })
     const response = await POST(post(rpc("eth_blockNumber")))

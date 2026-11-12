@@ -44,6 +44,15 @@ describe("validateProposal", () => {
     expect(validateProposal("   ", existing, 2)).toEqual({ ok: false, error: "La proposition ne peut pas être vide." })
   })
 
+  it("treats a text made only of invisible characters as empty", () => {
+    expect(validateProposal("\u200B\u200D \uFEFF", existing, 2)).toEqual({ ok: false, error: "La proposition ne peut pas être vide." })
+  })
+
+  it("spots a duplicate written with a different Unicode composition", () => {
+    const decomposed = "Me\u0301diathe\u0300que" // e + combining accents
+    expect(validateProposal(decomposed, ["Médiathèque"], 2)).toEqual({ ok: false, error: "Cette proposition existe déjà." })
+  })
+
   it("counts Unicode code points: 280 emoji pass, 281 fail", () => {
     expect(validateProposal("🌳".repeat(280), existing, 2).ok).toBe(true)
     expect(validateProposal("🌳".repeat(281), existing, 2)).toEqual({ ok: false, error: "280 caractères maximum." })

@@ -7,14 +7,18 @@ export type Deployment = {
   deploymentBlock: bigint
 }
 
-/** Builds a deployment from raw env values; returns undefined when they are missing or malformed. */
+/** Builds a deployment from raw env values; returns undefined when they are missing or malformed. The block is
+ *  optional only on the local node. */
 export function parseDeployment(
   chainId: number,
   address: string | undefined,
   block: string | undefined,
 ): Deployment | undefined {
   if (!address || !isAddress(address, { strict: false })) return undefined
-  if (block !== undefined && block !== "" && !/^\d+$/.test(block)) return undefined
+  const hasBlock = block !== undefined && block !== ""
+  // Logs are read from the deployment block; only the local node may start from 0.
+  if (!hasBlock && chainId !== hardhat.id) return undefined
+  if (hasBlock && !/^\d+$/.test(block)) return undefined
   return {
     chainId,
     address: getAddress(address),
