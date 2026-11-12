@@ -1,4 +1,10 @@
 {
+  "scripts": {
+    "test": "hardhat test",
+    "node": "hardhat node",
+    "deploy:local": "hardhat ignition deploy ignition/modules/Voting.ts --network localhost --reset",
+    "deploy:sepolia": "hardhat ignition deploy ignition/modules/Voting.ts --network sepolia"
+  },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^4.2.1",
     "@nomicfoundation/hardhat-ignition": "^3.1.9",
