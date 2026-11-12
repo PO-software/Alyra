@@ -2,7 +2,8 @@
 
 DApp de vote construite sur le contrat `Voting.sol` (correction du défi « Système de vote » #2, avec une limite de 1000 propositions). Le contrat est la source de vérité : il n'est pas modifié par la DApp.
 
-- **Démo en ligne (Sepolia)** : <!-- URL Vercel à compléter --> à venir
+- **Démo en ligne (Sepolia)** : https://voting-dapp-alyra.vercel.app
+- **Contrat sur Sepolia** : [`0x4bf6D95c784d6940C47Df65D3Ba8610d3302423e`](https://sepolia.etherscan.io/address/0x4bf6D95c784d6940C47Df65D3Ba8610d3302423e) (bloc 12118313)
 - **Vidéo de démonstration** : <!-- lien vidéo à compléter --> à venir
 - **Dépôt GitHub** : https://github.com/PO-software/Alyra/tree/main/6.%20Dapp/Projet3
 
