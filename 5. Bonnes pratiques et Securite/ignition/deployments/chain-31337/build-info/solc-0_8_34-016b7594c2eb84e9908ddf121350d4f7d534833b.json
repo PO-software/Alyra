@@ -1,0 +1,49 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_34-016b7594c2eb84e9908ddf121350d4f7d534833b",
+  "solcVersion": "0.8.34",
+  "solcLongVersion": "0.8.34+commit.80d5c536",
+  "compilerType": "solc",
+  "toolVersions": {
+    "hardhat": "3.21.0"
+  },
+  "userSourceNameMap": {
+    "contracts/Vault.sol": "project/contracts/Vault.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "osaka",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/Vault.sol": {
+        "content": "// SPDX-License-Identifier: GPL-3.0\npragma solidity 0.8.34;\n\n// You can store ETH in this contract and redeem them.\ncontract Vault {\n    mapping(address => uint) public balances;\n\n    /// @dev Store ETH in the contract.\n    function store() public payable {\n        balances[msg.sender]+=msg.value;\n    }\n    \n    /// @dev Redeem your ETH.\n    function redeem() public {\n        msg.sender.call{ value: balances[msg.sender] }(\"\");\n        balances[msg.sender]=0;\n    }\n}"
+      }
+    }
+  }
+}

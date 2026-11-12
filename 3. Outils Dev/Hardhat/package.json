@@ -6,7 +6,9 @@
     "@eslint/js": "^10.0.1",
     "@nomicfoundation/hardhat-ethers": "^4.2.0",
     "@nomicfoundation/hardhat-ignition": "^3.1.8",
+    "@nomicfoundation/hardhat-keystore": "3.1.1",
     "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^4.0.0",
+    "@nomicfoundation/hardhat-verify": "3.1.2",
     "@types/chai": "^5.2.3",
     "@types/chai-as-promised": "^8.0.2",
     "@types/mocha": "^10.0.10",
@@ -22,5 +24,12 @@
   },
   "scripts": {
     "lint": "eslint ."
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": ">=12.16.1",
+      "onFail": "error"
+    }
   }
 }
