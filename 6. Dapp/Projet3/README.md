@@ -4,7 +4,7 @@ DApp de vote construite sur le contrat `Voting.sol` (correction du défi « Syst
 
 - **Démo en ligne (Sepolia)** : https://voting-dapp-alyra.vercel.app
 - **Contrat sur Sepolia** : [`0x4bf6D95c784d6940C47Df65D3Ba8610d3302423e`](https://sepolia.etherscan.io/address/0x4bf6D95c784d6940C47Df65D3Ba8610d3302423e) (bloc 12118313)
-- **Vidéo de démonstration** : <!-- lien vidéo à compléter --> à venir
+- **Vidéo de démonstration** : [`docs/demo-voting-dapp.mp4`](docs/demo-voting-dapp.mp4) (2 min 30, sous-titrée, sans son : parcours complet sur le nœud Hardhat local, comptes de test changés via le panneau de développement)
 - **Dépôt GitHub** : https://github.com/PO-software/Alyra/tree/main/6.%20Dapp/Projet3
 
 ## Ce que permet la DApp
