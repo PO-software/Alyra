@@ -48,5 +48,8 @@
       "version": ">=12.16.1",
       "onFail": "error"
     }
+  },
+  "engines": {
+    "node": "24.x"
   }
 }
