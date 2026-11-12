@@ -1,0 +1,49 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_34-5a984fe4da043f4c1a9959af1cf7f5c4a0064765",
+  "solcVersion": "0.8.34",
+  "solcLongVersion": "0.8.34+commit.80d5c536",
+  "compilerType": "solc",
+  "toolVersions": {
+    "hardhat": "3.21.2"
+  },
+  "userSourceNameMap": {
+    "contracts/Bank.sol": "project/contracts/Bank.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "osaka",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/Bank.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity 0.8.34;\n\nerror Bank__NotEnoughFundsProvided();\nerror Bank__NotEnoughEthersOnTheSC();\nerror Bank__WithdrawFailed();\n\ncontract Bank {\n\n    mapping(address => uint256) balances;\n\n    function sendEthers() external payable {\n        if(msg.value < 1 wei) {\n            revert Bank__NotEnoughFundsProvided();\n        }\n        balances[msg.sender] += msg.value;\n    }\n\n    function withdraw(uint256 _amount) external {\n        if(_amount > balances[msg.sender]) {\n            revert Bank__NotEnoughEthersOnTheSC();\n        }\n        balances[msg.sender] -= _amount;\n        (bool received,) = msg.sender.call{ value: _amount }('');\n        if(!received) {\n            revert Bank__WithdrawFailed();\n        }\n    }\n\n    function getBalanceOfUser(address _user) external view returns(uint256) {\n        return balances[_user];\n    }\n}"
+      }
+    }
+  }
+}
