@@ -66,7 +66,7 @@ Après un redémarrage du nœud, relancez `pnpm deploy:local` : la page détecte
 
 ```shell
 cd backend && pnpm test                 # 89 tests du contrat (100 % des lignes)
-cd frontend && pnpm test                # 94 tests unitaires du front
+cd frontend && pnpm test                # 109 tests du front (unitaires + chemin Sepolia via /api/rpc)
 cd frontend && pnpm lint && pnpm typecheck && pnpm build
 ```
 
