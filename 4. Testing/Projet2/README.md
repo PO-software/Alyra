@@ -13,5 +13,5 @@ Tests écrits en TypeScript (`mocha` + `ethers`) dans `test/Voting.ts` : 34 test
 Lancer les tests :
 
 ```shell
-npx hardhat test
+pnpm hardhat test
 ```
